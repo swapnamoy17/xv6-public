@@ -56,7 +56,8 @@ int is_alnum(char c) {
 
 // Recursive function to resolve definitions, now detects cyclic dependencies
 int resolve_definition(char *value) {
-    for (int i = 0; i < def_count; i++) {
+    int i;
+    for (i = 0; i < def_count; i++) {
         if (custom_strncmp(value, definitions[i].identifier, custom_strlen(definitions[i].identifier)) == 0) {
             if (definitions[i].resolving) {
                 // Cyclic dependency detected, set to "1"
@@ -75,7 +76,8 @@ int resolve_definition(char *value) {
 }
 
 void preprocess_definitions() {
-    for (int i = 0; i < def_count; i++) {
+    int i;
+    for (i = 0; i < def_count; i++) {
         resolve_definition(definitions[i].value);
     }
 }
@@ -83,8 +85,9 @@ void preprocess_definitions() {
 // Updated function to handle redefinition of variables
 void add_definition(char *arg) {
     char *eq = custom_strchr(arg, '=');
-    if (eq == 0) {
-        printf(2, "Invalid definition: %s\n", arg);
+    if (eq == 0 || eq == arg + 2) {
+        // Case where no macro name is given (e.g., -D=)
+        printf(2, "error: no macro name given in #define directive\n");
         return;
     }
 
@@ -97,7 +100,8 @@ void add_definition(char *arg) {
     }
 
     // Check if this identifier already exists in definitions
-    for (int i = 0; i < def_count; i++) {
+    int i;
+    for (i = 0; i < def_count; i++) {
         if (custom_strncmp(definitions[i].identifier, arg + 2, id_len) == 0 &&
             custom_strlen(definitions[i].identifier) == id_len) {
             // Overwrite the existing definition
