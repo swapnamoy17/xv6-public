@@ -1,13 +1,15 @@
 Test Cases:
 
+4D Nested
+3d Nested —> -DA=1 -DB=C -DC=A.
 Nested -> -DA=B -DB=C
 Similar -> -DA=B -DB=1 -DB=2
+Cyclic
 
 Empty File
 Escaped characs
 Value not present in file
 Empty replacement
-Replace empty - -D=1
 No space between vars
 No replacement if variable enclosed in quotes.
 
@@ -17,7 +19,16 @@ normal #define directive
 multiple #define statements
 #define with normal replacements through command line.
 
+Replace empty (One argument) - -D=1 - Error
+replace empty (one arg, 2 in total) = -D= -DA=1 - Works (Arguments in any order)
+Replace empty (first arg not present in file, second empty) - Error
+
+even one empty so error but print taking into account the rest.
+
+
+Nested in macro
 Cyclic in macros
+Macro with parameters passed from command line
 
 NOTE: we have stopped maintaining the x86 version of xv6, and switched
 our efforts to the RISC-V version
