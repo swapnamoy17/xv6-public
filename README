@@ -1,3 +1,18 @@
+Test Cases:
+
+Cyclic —> -DA=1 -DB=C -DC=A.  - Fail
+Nested -> -DA=B -DB=C
+Similar -> -DA=B -DB=1 -DB=2
+
+Empty File
+Escaped characs
+Value not present in file
+Empty replacement
+Replace empty - -D=1
+No space between vars
+
+Cyclic in macros
+
 NOTE: we have stopped maintaining the x86 version of xv6, and switched
 our efforts to the RISC-V version
 (https://github.com/mit-pdos/xv6-riscv.git)
