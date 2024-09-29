@@ -128,10 +128,20 @@ char* replace_variables(char *line) {
     char *result = new_line;
     char *word_start = line;
     int i;
+    int inside_single_quotes = 0;  // Flag to check if we're inside single quotes
+    int inside_double_quotes = 0;  // Flag to check if we're inside double quotes
 
     while (*line) {
-        // Check if we're at the start of a potential identifier
-        if (is_identifier_char(*line) && (line == word_start || !is_identifier_char(*(line - 1)))) {
+        // Check for single or double quotes and toggle the flags
+        if (*line == '\'' && !inside_double_quotes) {
+            inside_single_quotes = !inside_single_quotes;
+        } else if (*line == '\"' && !inside_single_quotes) {
+            inside_double_quotes = !inside_double_quotes;
+        }
+
+        // If we're not inside quotes, check for identifiers to replace
+        if (!inside_single_quotes && !inside_double_quotes && is_identifier_char(*line) && 
+            (line == word_start || !is_identifier_char(*(line - 1)))) {
             for (i = 0; i < def_count; i++) {
                 int len = custom_strlen(definitions[i].identifier);
                 if (custom_strncmp(line, definitions[i].identifier, len) == 0 &&
@@ -153,7 +163,7 @@ char* replace_variables(char *line) {
                 line++;
             }
         } else {
-            // Not start of an identifier, move to next character
+            // Not start of an identifier or inside quotes, move to next character
             line++;
         }
     }
@@ -169,9 +179,10 @@ int main(int argc, char *argv[]) {
     int fd, n, i;
     char line[MAX_LINE_LENGTH];
     int empty_file = 1;  // Flag to check if file is empty
+    int has_definitions = 0;  // Flag to check if there are -D arguments
 
-    if (argc < 3) {
-        printf(2, "Usage: %s <input_file> -D<var1>=<val1> [-D<var2>=<val2> ...]\n", argv[0]);
+    if (argc < 2) {
+        printf(2, "Usage: %s <input_file> [-D<var1>=<val1> [-D<var2>=<val2> ...]]\n", argv[0]);
         exit();
     }
 
@@ -182,21 +193,30 @@ int main(int argc, char *argv[]) {
         exit();
     }
 
-    // Process definitions
+    // Process definitions if any -D arguments are provided
     for (i = 2; i < argc; i++) {
         if (custom_strncmp(argv[i], "-D", 2) == 0) {
+            has_definitions = 1;  // There are definitions to process
             add_definition(argv[i]);
         }
     }
 
-    // Preprocess all definitions (resolve any nested references)
-    preprocess_definitions();
+    if (has_definitions) {
+        // Preprocess all definitions (resolve any nested references)
+        preprocess_definitions();
+    }
 
     // Process input file
     while ((n = read(fd, line, sizeof(line))) > 0) {
         empty_file = 0;  // File has content
-        char *processed_line = replace_variables(line);
-        printf(1, "%s", processed_line);
+        if (has_definitions) {
+            // Replace variables only if there are definitions
+            char *processed_line = replace_variables(line);
+            printf(1, "%s", processed_line);
+        } else {
+            // No definitions, print the file as-is
+            printf(1, "%s", line);
+        }
     }
 
     // If file is empty, print a message
