@@ -11,7 +11,7 @@
 struct Definition {
     char identifier[MAX_IDENTIFIER_LENGTH];
     char value[MAX_VALUE_LENGTH];
-    int resolving;  // To detect cyclic dependencies
+    int resolving;
     int from_file;  // 1 if from file (#define), 0 if from command line
 };
 
@@ -61,7 +61,7 @@ int is_identifier_char(char c) {
     return is_alnum(c) || (c == '_');  // Allow alphanumeric characters and underscore
 }
 
-// Recursive function to resolve definitions, now detects cyclic dependencies
+// Recursive function to resolve definitions.
 int resolve_definition(char *value) {
     int i;
     for (i = 0; i < def_count; i++) {
@@ -69,7 +69,6 @@ int resolve_definition(char *value) {
         int val_len = custom_strlen(value);
         if (val_len == id_len && custom_strncmp(value, definitions[i].identifier, id_len) == 0) {
             if (definitions[i].resolving) {
-                // Cyclic dependency detected, set to "1"
                 custom_strcpy(definitions[i].value, "1");  // Set the value to "1" in the case of a cycle
                 return 1;
             }
@@ -81,7 +80,7 @@ int resolve_definition(char *value) {
             return 1;
         }
     }
-    return 0;  // No further resolution needed
+    return 0;
 }
 
 void preprocess_definitions() {
@@ -91,7 +90,7 @@ void preprocess_definitions() {
     }
 }
 
-// Updated function to handle redefinition of variables
+// Function to handle redefinition of variables
 void add_definition(char *arg, int from_file) {
     char *eq = custom_strchr(arg, '=');
     if (eq == 0 || eq == arg + 2) {
@@ -101,14 +100,14 @@ void add_definition(char *arg, int from_file) {
     }
 
     int id_len = eq - arg - 2;  // -2 to skip "-D"
-    int val_len = custom_strlen(eq + 1);  // This can be 0 (i.e., empty string)
+    int val_len = custom_strlen(eq + 1);  // Can be 0 (i.e., empty string)
 
     if (id_len >= MAX_IDENTIFIER_LENGTH || val_len >= MAX_VALUE_LENGTH) {
         printf(2, "Identifier or value too long: %s\n", arg);
         return;
     }
 
-    // Check if this identifier already exists in definitions
+    // Checking if the identifier already exists in definitions
     int i;
     for (i = 0; i < def_count; i++) {
         if (custom_strncmp(definitions[i].identifier, arg + 2, id_len) == 0 &&
@@ -122,9 +121,8 @@ void add_definition(char *arg, int from_file) {
                 definitions[i].value[val_len] = '\0';
                 definitions[i].from_file = 1;  // Update source to file
             } else if (definitions[i].from_file == 1 && from_file == 0) {
-                // Existing definition is from file, new one from command line
+                // Existing definition is from file
                 printf(2, "Warning: variable '%s' is already defined via #define, command line definition ignored\n", definitions[i].identifier);
-                // Do not overwrite
             } else {
                 // Both definitions are from the same source, overwrite
                 custom_strncpy(definitions[i].value, eq + 1, val_len);
@@ -134,16 +132,16 @@ void add_definition(char *arg, int from_file) {
         }
     }
 
-    // If no existing definition found, add a new one
+    // No existing definition found, adding a new one
     if (def_count >= MAX_DEFINITIONS) {
         printf(2, "Maximum number of definitions reached.\n");
         return;
     }
     custom_strncpy(definitions[def_count].identifier, arg + 2, id_len);
     definitions[def_count].identifier[id_len] = '\0';
-    custom_strcpy(definitions[def_count].value, eq + 1);  // This can copy an empty string
-    definitions[def_count].resolving = 0;  // Initialize resolving flag
-    definitions[def_count].from_file = from_file;  // Set the source flag
+    custom_strcpy(definitions[def_count].value, eq + 1);
+    definitions[def_count].resolving = 0;
+    definitions[def_count].from_file = from_file;
     def_count++;
 }
 
@@ -162,7 +160,7 @@ char* replace_variables(char *line) {
             inside_double_quotes = !inside_double_quotes;
         }
 
-        // Check for identifier replacements if not inside quotes
+        // Checking for identifier replacements if not inside quotes
         if (!inside_single_quotes && !inside_double_quotes && is_identifier_char(*line) &&
             (line == word_start || !is_identifier_char(*(line - 1)))) {
             int replaced = 0;
@@ -199,14 +197,12 @@ char* replace_variables(char *line) {
 int main(int argc, char *argv[]) {
     int fd, n, i;
     char line[MAX_LINE_LENGTH];
-    // Removed 'empty_file' variable and related logic
 
     if (argc < 2) {
         printf(2, "Usage: %s <input_file> [-D<var1>=<val1> [-D<var2>=<val2> ...]]\n", argv[0]);
         exit();
     }
 
-    // Open input file for the first pass to process #define directives
     fd = open(argv[1], O_RDONLY);
     if (fd < 0) {
         printf(2, "Failed to open input file: %s\n", argv[1]);
@@ -215,12 +211,11 @@ int main(int argc, char *argv[]) {
 
     // First pass: process #define directives
     while ((n = read(fd, line, sizeof(line))) > 0) {
-        // Process each line separately
         int start = 0;
         int end = 0;
         while (end < n) {
             if (line[end] == '\n' || end == n - 1) {
-                // Get a complete line
+                // Complete line
                 char temp_line[MAX_LINE_LENGTH];
                 int len = end - start + 1;
                 if (line[end] != '\n' && end == n - 1)
@@ -233,7 +228,7 @@ int main(int argc, char *argv[]) {
                     char *line_ptr = temp_line + 7;
                     while (*line_ptr == ' ' || *line_ptr == '\t') line_ptr++;
 
-                    // Extract identifier and value from #define
+                    // Extracting identifier and value from #define
                     char identifier[MAX_IDENTIFIER_LENGTH];
                     char value[MAX_VALUE_LENGTH];
 
@@ -250,7 +245,6 @@ int main(int argc, char *argv[]) {
                     custom_strncpy(value, val_start, val_len);
                     value[val_len] = '\0';
 
-                    // Add #define as if it were passed as -D argument
                     char def_str[MAX_IDENTIFIER_LENGTH + MAX_VALUE_LENGTH + 3];
                     def_str[0] = '-';
                     def_str[1] = 'D';
@@ -259,7 +253,7 @@ int main(int argc, char *argv[]) {
                     def_str[def_len] = '=';
                     custom_strcpy(def_str + def_len + 1, value);
 
-                    add_definition(def_str, 1);  // 1 indicates from file
+                    add_definition(def_str, 1);  // 1 - From the file
                 }
 
                 start = end + 1;
@@ -270,17 +264,17 @@ int main(int argc, char *argv[]) {
 
     close(fd);
 
-    // Now process command-line definitions after processing #define directives
+    // Processing command-line definitions after #define directives
     for (i = 2; i < argc; i++) {
         if (custom_strncmp(argv[i], "-D", 2) == 0) {
-            add_definition(argv[i], 0);  // 0 indicates command line
+            add_definition(argv[i], 0);  // 0 -> command line
         }
     }
 
     // Preprocess all definitions (resolve any nested references)
     preprocess_definitions();
 
-    // Reopen the file for the second pass
+    // Reopening the file for second pass
     fd = open(argv[1], O_RDONLY);
     if (fd < 0) {
         printf(2, "Failed to reopen input file: %s\n", argv[1]);
@@ -289,12 +283,11 @@ int main(int argc, char *argv[]) {
 
     // Second pass: process and print the lines
     while ((n = read(fd, line, sizeof(line))) > 0) {
-        // Process each line separately
+        // Processing each line separately
         int start = 0;
         int end = 0;
         while (end < n) {
             if (line[end] == '\n' || end == n - 1) {
-                // Get a complete line
                 char temp_line[MAX_LINE_LENGTH];
                 int len = end - start + 1;
                 if (line[end] != '\n' && end == n - 1)
@@ -302,7 +295,7 @@ int main(int argc, char *argv[]) {
                 custom_strncpy(temp_line, line + start, len);
                 temp_line[len] = '\0';
 
-                // If line starts with #define, skip printing it
+                // Skip printing the #define line
                 if (custom_strncmp(temp_line, "#define", 7) != 0) {
                     // Replace variables
                     char *processed_line = replace_variables(temp_line);
