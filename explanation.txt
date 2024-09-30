@@ -1,0 +1,56 @@
+Explanation of preprocess.c and thought process 
+
+The preprocess.c program is a custom preprocessor designed for the xv6 operating system. 
+It aims to reciprocate the functionality of GCC's preprocessor, handling an input text file by processing variable definitions provided via command-line arguments (-D options) and #define directives within the file itself.
+
+Functions added -
+a. Custom string functions
+    - custom_strlen: Calculates the length of a string.
+    - custom_strcpy: Copies a string from source to destination.
+    - custom_strncpy: Copies a specified number of characters from source to destination.
+    - custom_strncmp: Compares a specified number of characters between two strings.
+    - custom_strchr: Finds the first occurrence of a character in a string.
+    - is_alnum: Checks if a character is alphanumeric.
+    - is_identifier_char: Checks if a character is valid in an identifier (alphanumeric or underscore).
+
+b. Data Structure
+    - struct Definition: Stores variable definitions with the following fields:
+    - identifier: The name of the variable.
+    - value: The value assigned to the variable.
+    - resolving: A flag used to detect cyclic dependencies during recursive resolution.
+    - from_file: Indicates the source of the definition (1 for file, 0 for command line).
+
+c. Variable definition handling function
+    - add_definition(char *arg, int from_file): Adds a variable definition to the definitions list. It handles redefinitions and prints warnings when necessary.
+
+d. Definition Resolution function
+    - resolve_definition(char *value): Recursively resolves variable definitions to their final values, handling nested definitions
+
+e. Variable Replacement function
+    - replace_variables(char *line): Replaces occurrences of defined variables in a given line with their corresponding values.
+                                     Skips replacements inside single (') and double (") quotes to preserve string literals.
+                                     Ensures that only entire identifiers are replaced, avoiding partial matches within larger words.
+                                     Uses pointers to track the current position and build the new line with replacements.
+
+f. Main function logic
+    - Argument Parsing: Checks if the required input file is provided.
+                        Parses command-line arguments to collect any -D definitions.
+    
+    - First Pass - Processing #define Directives:   Opens the input file and reads it line by line.
+                                                    Identifies lines starting with #define and extracts the variable name and value.
+                                                    Adds these definitions using add_definition, marking them as from the file (from_file = 1).
+
+    - Processing Command-Line Definitions After File Definitions: After collecting all file-based #define directives, the program processes command-line definitions.
+                                                                  This order ensures that #define directives in the file take precedence over command-line definitions.
+
+    - Preprocessing Definitions:   Calls preprocess_definitions() to resolve all variable definitions, handling nested and cyclic definitions.
+
+    - Second Pass Over the File - Variable Replacement and Output:  Reopens the input file and reads it line by line.
+                                                                    If the line starts with #define, it is skipped and not printed in the output.
+                                                                    Else, the line is processed with replace_variables() to perform variable replacements and then printed.
+    - Termination - Closes the file and exits the program
+
+Changes made to xv6 -
+
+a. Included preprocess and hello in the JPROGS section of the Makefile by adding lines _preprocess and _hello.
+b. Added data.txt to the list of files to be included in the xv6 file system image (fs.img).
