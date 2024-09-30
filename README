@@ -1,6 +1,5 @@
 Test Cases:
 
-Cyclic —> -DA=1 -DB=C -DC=A.  - Fail
 Nested -> -DA=B -DB=C
 Similar -> -DA=B -DB=1 -DB=2
 
@@ -10,6 +9,9 @@ Value not present in file
 Empty replacement
 Replace empty - -D=1
 No space between vars
+No replacement if variable enclosed in quotes.
+
+
 
 Cyclic in macros
 
