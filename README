@@ -11,7 +11,11 @@ Replace empty - -D=1
 No space between vars
 No replacement if variable enclosed in quotes.
 
-
+#define cases 
+normal #define directive
+#define precedence over command line definitions
+multiple #define statements
+#define with normal replacements through command line.
 
 Cyclic in macros
 
