@@ -61,6 +61,7 @@ int is_identifier_char(char c) {
     return is_alnum(c) || (c == '_');  // Allow alphanumeric characters and underscore
 }
 
+// Recursive function to resolve definitions, now detects cyclic dependencies
 int resolve_definition(char *value) {
     int i;
     for (i = 0; i < def_count; i++) {
@@ -82,7 +83,6 @@ int resolve_definition(char *value) {
     }
     return 0;  // No further resolution needed
 }
-
 
 void preprocess_definitions() {
     int i;
@@ -199,22 +199,14 @@ char* replace_variables(char *line) {
 int main(int argc, char *argv[]) {
     int fd, n, i;
     char line[MAX_LINE_LENGTH];
-    int empty_file = 1;  // Flag to check if file is empty
-    // Removed 'has_definitions' variable as it's not used
+    // Removed 'empty_file' variable and related logic
 
     if (argc < 2) {
         printf(2, "Usage: %s <input_file> [-D<var1>=<val1> [-D<var2>=<val2> ...]]\n", argv[0]);
         exit();
     }
 
-    // Process definitions if any -D arguments are provided
-    for (i = 2; i < argc; i++) {
-        if (custom_strncmp(argv[i], "-D", 2) == 0) {
-            add_definition(argv[i], 0);  // 0 indicates command line
-        }
-    }
-
-    // Open input file
+    // Open input file for the first pass to process #define directives
     fd = open(argv[1], O_RDONLY);
     if (fd < 0) {
         printf(2, "Failed to open input file: %s\n", argv[1]);
@@ -223,8 +215,6 @@ int main(int argc, char *argv[]) {
 
     // First pass: process #define directives
     while ((n = read(fd, line, sizeof(line))) > 0) {
-        empty_file = 0;
-
         // Process each line separately
         int start = 0;
         int end = 0;
@@ -278,21 +268,27 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Close and reopen the file for the second pass
     close(fd);
+
+    // Now process command-line definitions after processing #define directives
+    for (i = 2; i < argc; i++) {
+        if (custom_strncmp(argv[i], "-D", 2) == 0) {
+            add_definition(argv[i], 0);  // 0 indicates command line
+        }
+    }
+
+    // Preprocess all definitions (resolve any nested references)
+    preprocess_definitions();
+
+    // Reopen the file for the second pass
     fd = open(argv[1], O_RDONLY);
     if (fd < 0) {
         printf(2, "Failed to reopen input file: %s\n", argv[1]);
         exit();
     }
 
-    // Preprocess all definitions (resolve any nested references)
-    preprocess_definitions();
-
     // Second pass: process and print the lines
     while ((n = read(fd, line, sizeof(line))) > 0) {
-        empty_file = 0;
-
         // Process each line separately
         int start = 0;
         int end = 0;
@@ -306,10 +302,8 @@ int main(int argc, char *argv[]) {
                 custom_strncpy(temp_line, line + start, len);
                 temp_line[len] = '\0';
 
-                // If line starts with #define, print as-is
-                if (custom_strncmp(temp_line, "#define", 7) == 0) {
-                    printf(1, "%s", temp_line);
-                } else {
+                // If line starts with #define, skip printing it
+                if (custom_strncmp(temp_line, "#define", 7) != 0) {
                     // Replace variables
                     char *processed_line = replace_variables(temp_line);
                     printf(1, "%s", processed_line);
@@ -319,10 +313,6 @@ int main(int argc, char *argv[]) {
             }
             end++;
         }
-    }
-
-    if (empty_file) {
-        printf(1, "File is empty\n");
     }
 
     close(fd);
