@@ -1,0 +1,108 @@
+TEST-1
+TEST-BEGIN
+TEXT:
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed viverra pulvinar
+lectus, vitae rhoncus felis egestas in. Nam ut quam sed augue euismod interdum.
+Duis nec ligula sapien. Maecenas non eros suscipit, molestie felis ut,
+dignissim sem.
+COMMAND:
+preprocess data.txt -DLorem=Ipsum -Ddolor=amet -Damet=Lorem
+TEST-END
+
+TEST-2
+TEST-BEGIN
+TEXT:
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed viverra pulvinar
+lectus, vitae rhoncus felis egestas in. Nam ut quam sed augue euismod interdum.
+Duis nec ligula sapien. Maecenas non eros suscipit, molestie felis ut,
+dignissim sem.
+COMMAND:
+preprocess data.txt -DLorem=Ipsum -DIpsum=amet -DIpsum=felis
+TEST-END
+
+TEST-3
+TEST-BEGIN
+TEXT:
+int main() {
+    int x = "A";
+}
+x
+COMMAND:
+preprocess data.txt -DA=99
+TEST-END
+
+TEST-4
+TEST-BEGIN
+TEXT:
+int main() {
+    int x = "A";
+}
+x
+COMMAND:
+preprocess data.txt -D=99
+TEST-END
+
+TEST-5
+TEST-BEGIN
+TEXT:
+int main() {
+    int x = "A";
+}
+x
+COMMAND:
+preprocess data.txt -D=99 -Dx=y
+TEST-END
+
+TEST-6
+TEST-BEGIN
+TEXT:
+int main() {
+    int x = A+B;
+}
+x
+COMMAND:
+preprocess data.txt -DA=99 -DB=100
+TEST-END
+
+TEST-7
+TEST-BEGIN
+TEXT:
+COMMAND:
+preprocess data.txt -DA=99 -DB=100
+TEST-END
+
+TEST-8
+TEST-BEGIN
+TEXT:
+#define a 42
+a is so magnificent.
+#define b 50
+b = 60
+b is also magnificent.
+COMMAND:
+preprocess data.txt
+TEST-END
+
+TEST-9
+TEST-BEGIN
+TEXT:
+#define a 42
+a is so magnificent.
+#define b 50
+b = 60
+b is also magnificent.
+COMMAND:
+preprocess data.txt -Da=99
+TEST-END
+
+TEST-10
+TEST-BEGIN
+TEXT:
+#define a b
+a is so magnificent.
+#define b 50
+b = 60
+b is also magnificent.
+COMMAND:
+preprocess data.txt
+TEST-END
